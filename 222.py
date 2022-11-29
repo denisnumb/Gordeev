@@ -5,7 +5,12 @@ from typing import List, Tuple
 from datetime import datetime
 import matplotlib.pyplot as plt
 import numpy as np
+from prettytable import PrettyTable, ALL
 
+title_names = {'name': 'Название', 'description': 'Описание', 'key_skills': 'Навыки', 'experience_id': 'Опыт работы', 'premium': 'Премиум-вакансия', 'employer_name': 'Компания', 'salary': 'Оклад', 'salary_from': 'Нижняя граница вилки оклада', 'salary_to': 'Верхняя граница вилки оклада', 'salary_gross': 'Оклад указан до вычета налогов', 'salary_currency': 'Идентификатор валюты оклада', 'area_name': 'Название региона', 'published_at': 'Дата публикации вакансии'}
+table_fields = {'name': 'Название', 'description': 'Описание', 'key_skills': 'Навыки', 'experience_id': 'Опыт работы', 'premium': 'Премиум-вакансия', 'employer_name': 'Компания', 'salary': 'Оклад', 'area_name': 'Название региона', 'published_at': 'Дата публикации вакансии'}
+experience = {'noExperience': 'Нет опыта', 'between1And3': 'От 1 года до 3 лет', 'between3And6': 'От 3 до 6 лет', 'moreThan6': 'Более 6 лет'}
+currency = {'AZN': 'Манаты', 'BYR': 'Белорусские рубли', 'EUR': 'Евро', 'GEL': 'Грузинский лари', 'KGS': 'Киргизский сом', 'KZT': 'Тенге', 'RUR': 'Рубли', 'UAH': 'Гривны', 'USD': 'Доллары', 'UZS': 'Узбекский сум'}
 currency_to_rub = {'AZN': 35.68, 'BYR': 23.91, 'EUR': 59.9, 'GEL': 21.74, 'KGS': 0.76, 'KZT': 0.13, 'RUR': 1, 'UAH': 1.64, 'USD': 60.66, 'UZS': 0.0055}
 
 class DataSet:
@@ -140,6 +145,62 @@ def calculate_average_salary(dict_object: dict) -> None:
     for key in dict_object:
         dict_object[key]['salary'] = int(sum(dict_object[key]['salary']) / len(dict_object[key]['salary']))
 
+def print_vacancies(vacancies_data: list, filter_: list, sort_param: str, reverse_sort: bool, numbers: list, columns: list):
+	table = PrettyTable(hrules=ALL, field_names=list(table_fields.values()), max_width=20, align='l')
+	filter_key, filter_value = filter_
+
+	if sort_param:
+		vacancies_data = sorted(vacancies_data, key= lambda v: apply_sort(sort_param, v), reverse=reverse_sort)
+
+	for vacancy in vacancies_data:
+		if filter_key and not apply_filter(filter_key, filter_value, vacancy):
+			continue
+		table.add_row([str(v)[:100]+'...' if len(str(v)) > 100 else str(v) for k, v in vacancy.__dict__.items() if k in table_fields.keys()])	
+	
+	if len(table.rows) == 0:
+		return print('Ничего не найдено')
+
+	table.add_autoindex('№')
+
+	end = numbers[1] if len(numbers) == 2 else len(table.rows)
+	columns = list(table_fields.values()) if len(columns) == 0 else [field for field in table_fields.values() if field in columns]
+	print(table.get_string(start=numbers[0], end=end, fields=['№']+columns))
+
+def parse_filter(data: str):
+	if data == '':
+		return [None, None]
+	if ': ' in data:
+		name, value = data.split(': ')
+		inverse_title_names = {v: k for k, v in title_names.items()}
+
+		if name in inverse_title_names.keys():
+			name = inverse_title_names[name]
+		if not name in inverse_title_names.values():
+			return 'Параметр поиска некорректен'
+
+		return [name, value]
+
+	return 'Формат ввода некорректен'
+
+def apply_filter(key, filter_value, vacancy):
+	if key == 'salary':
+		return vacancy.salary.salary_from <= float(filter_value) <= vacancy.salary.salary_to
+	if key == 'key_skills':
+		return all(map(lambda i: i in vacancy.key_skills.split('\n'), filter_value.split(', ')))
+	if key == 'published_at':
+		return filter_value == str(vacancy.published_at)
+	return filter_value == (vacancy.__dict__[key] if key in vacancy.__dict__ else vacancy.salary.__dict__[key])
+
+def apply_sort(sort_param: str, vacancy: Vacancy):
+	if sort_param == 'key_skills':
+		return len(vacancy.key_skills.split('\n'))
+	if sort_param == 'experience_id':
+		return {v: i for i, v in enumerate(experience.values())}[vacancy.experience_id]
+	if sort_param == 'salary':
+		currency_multiplier = currency_to_rub[{v: k for k, v in currency.items()}[vacancy.salary.salary_currency]]
+		return (vacancy.salary.salary_from * currency_multiplier + vacancy.salary.salary_to * currency_multiplier) / 2
+	return vacancy.__dict__[sort_param]
+
 def print_statistics(vacancies_data: List[Vacancy], prof_name: str) -> None:
     total_data = {}
     prof_data = {}
@@ -179,7 +240,28 @@ def print_statistics(vacancies_data: List[Vacancy], prof_name: str) -> None:
 
     Report(prof_name, salaries, vacancies, salaries_prof, vacancies_prof, salaries_cities_to_print, vacancies_cities_to_print).generate_image()
 
-def get_input():
+def get_input2():
+	file_name = input('Введите название файла: ')
+	filter_ = parse_filter(input('Введите параметр фильтрации: '))
+	sort_param = input('Введите параметр сортировки: ')
+	reverse_sort = input('Обратный порядок сортировки (Да / Нет): ').lower()
+	numbers_to_print = list(map(lambda i: int(i)-1, input('Введите диапазон вывода: ').split())) or [0]
+	columns_to_print = list(filter(None, input('Введите требуемые столбцы: ').split(', ')))	
+
+	if isinstance(filter_, str):
+		return print(filter_)
+	if sort_param and not sort_param in table_fields.values():
+		return print('Параметр сортировки некорректен')
+	if not reverse_sort in ('да', 'нет', ''):
+		return print('Порядок сортировки задан некорректно')
+	csv_data = csv_reader(file_name)
+	if isinstance(csv_data, str):
+		return print(csv_data)
+
+	sort_param = {v: k for k, v in table_fields.items()}[sort_param] if sort_param else ''
+	print_vacancies(csv_filer(*csv_data), filter_, sort_param, reverse_sort == 'да', numbers_to_print, columns_to_print)
+
+def get_input1():
     file_name = input('Введите название файла: ')
     prof_name = input('Введите название профессии: ')
 
@@ -188,6 +270,14 @@ def get_input():
         return print(csv_data)
 
     print_statistics(csv_filer(*csv_data), prof_name)
+
+
+def get_input():
+    choice = input('Вакансии или Стастистика: ')
+    if choice == 'Вакансии':
+        return get_input2()
+    if choice == 'Статистика':
+        return get_input1()
 
 
 get_input()
