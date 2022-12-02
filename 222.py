@@ -6,6 +6,7 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 import numpy as np
 from prettytable import PrettyTable, ALL
+import doctest
 
 title_names = {'name': 'Название', 'description': 'Описание', 'key_skills': 'Навыки', 'experience_id': 'Опыт работы', 'premium': 'Премиум-вакансия', 'employer_name': 'Компания', 'salary': 'Оклад', 'salary_from': 'Нижняя граница вилки оклада', 'salary_to': 'Верхняя граница вилки оклада', 'salary_gross': 'Оклад указан до вычета налогов', 'salary_currency': 'Идентификатор валюты оклада', 'area_name': 'Название региона', 'published_at': 'Дата публикации вакансии'}
 table_fields = {'name': 'Название', 'description': 'Описание', 'key_skills': 'Навыки', 'experience_id': 'Опыт работы', 'premium': 'Премиум-вакансия', 'employer_name': 'Компания', 'salary': 'Оклад', 'area_name': 'Название региона', 'published_at': 'Дата публикации вакансии'}
@@ -88,6 +89,11 @@ class SalaryFloatItem(float):
 
 		Returns:
 			str: Возвращает число, у которого разряды разделены пробелом
+
+		>>> str(SalaryFloatItem(1000000000))
+		'1 000 000 000'
+		>>> str(SalaryFloatItem(10000000.48))
+		'10 000 000'
 		"""
 		return f'{int(self):,}'.replace(',', ' ')
 
@@ -217,6 +223,13 @@ def csv_filer(titles: List[str], data: List[str]) -> List[Vacancy]:
 
 	Returns:
 		List[Vacancy]: Список вакансий
+
+	>>> csv_filer(['name', 'area_name', 'published_at', 'salary_from', 'salary_to', 'salary_currency'], [['Name', 'Area Name', '2022-12-01 18:01:01+120863', '12', '24', 'RUR']])[0].salary.salary_currency
+	'RUR'
+	>>> csv_filer(['name', 'area_name', 'published_at', 'salary_from', 'salary_to', 'salary_currency'], [['Name', 'Area Name', '2022-12-01 18:01:01+120863', '12', '24', 'RUR']])[0].published_at.day
+	1
+	>>> str(csv_filer(['name', 'area_name', 'published_at', 'salary_from', 'salary_to', 'salary_currency'], [['Name', 'Area Name', '2022-12-01 18:01:01+120863', '12', '24', 'RUR']])[0].salary)
+	'12 - 24 (RUR)'
 	"""
 	vacancies_objects = []
 
@@ -293,6 +306,15 @@ def parse_filter(data: str):
 
 	Returns:
 		list or str: Список, если запрос `data` корректен, Строка — если некорректен
+
+	>>> parse_filter('')
+	[None, None]
+	>>> parse_filter('dsfjh')
+	'Формат ввода некорректен'
+	>>> parse_filter('Дата: 12.03.2022')
+	'Параметр поиска некорректен'
+	>>> parse_filter('Название: название')
+	['name', 'название']
 	"""
 	if data == '':
 		return [None, None]
@@ -319,13 +341,22 @@ def apply_filter(key, filter_value, vacancy):
 
 	Returns:
 		bool: Нужно ли выводить вакансию в таблицу
+
+	>>> apply_filter('salary', '24', Vacancy('Название', Salary('12', '36', 'RUR'), 'Москва', '2022-12-01 18:01:01+120863'))
+	True
+	>>> apply_filter('published_at', '01.12.2022', Vacancy('Название', Salary('12', '36', 'RUR'), 'Москва', '2022-12-01 18:01:01+120863'))
+	True
+	>>> apply_filter('name', 'Программист', Vacancy('Программист', Salary('12', '36', 'RUR'), 'Москва', '2022-12-01 18:01:01+120863'))
+	True
+	>>> apply_filter('name', 'Аналитик', Vacancy('Программист', Salary('12', '36', 'RUR'), 'Москва', '2022-12-01 18:01:01+120863'))
+	False
+	>>> apply_filter('salary_currency', 'RUR', Vacancy('Программист', Salary('12', '36', 'RUR'), 'Москва', '2022-12-01 18:01:01+120863'))
+	True
 	"""
 	if key == 'salary':
 		return vacancy.salary.salary_from <= float(filter_value) <= vacancy.salary.salary_to
-	if key == 'key_skills':
-		return all(map(lambda i: i in vacancy.key_skills.split('\n'), filter_value.split(', ')))
 	if key == 'published_at':
-		return filter_value == str(vacancy.published_at)
+		return filter_value == datetime.strftime(vacancy.published_at, '%d.%m.%Y')
 	return filter_value == (vacancy.__dict__[key] if key in vacancy.__dict__ else vacancy.salary.__dict__[key])
 
 def apply_sort(sort_param: str, vacancy: Vacancy):
@@ -337,14 +368,14 @@ def apply_sort(sort_param: str, vacancy: Vacancy):
 
 	Returns:
 		Any: Значение для сравнения с другим значением при сортировке
+
+	>>> apply_sort('salary', Vacancy('Программист', Salary('12', '36', 'RUR'), 'Москва', '2022-12-01 18:01:01+120863'))
+	24.0
+	>>> apply_sort('area_name', Vacancy('Программист', Salary('12', '36', 'RUR'), 'Москва', '2022-12-01 18:01:01+120863'))
+	'Москва'
 	"""
-	if sort_param == 'key_skills':
-		return len(vacancy.key_skills.split('\n'))
-	if sort_param == 'experience_id':
-		return {v: i for i, v in enumerate(experience.values())}[vacancy.experience_id]
 	if sort_param == 'salary':
-		currency_multiplier = currency_to_rub[{v: k for k, v in currency.items()}[vacancy.salary.salary_currency]]
-		return (vacancy.salary.salary_from * currency_multiplier + vacancy.salary.salary_to * currency_multiplier) / 2
+		return (vacancy.salary.salary_from + vacancy.salary.salary_to) / 2
 	return vacancy.__dict__[sort_param]
 
 def print_statistics(vacancies_data: List[Vacancy], prof_name: str) -> None:
@@ -438,4 +469,4 @@ def get_input():
 		return get_input1()
 
 
-get_input()
+print(doctest.testmod())
