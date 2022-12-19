@@ -15,3 +15,8 @@
 **Многопроцессорная обрабтка:**
 
 ![1](https://user-images.githubusercontent.com/61795655/208450125-ae3aeb1e-dcc0-43fd-9c99-94b5051c24e6.png)
+
+# 3.2.3
+
+![image](https://user-images.githubusercontent.com/61795655/208451367-1c051e54-f718-4314-869c-953db29350a7.png)
+
