@@ -25,3 +25,12 @@
 Статистика валют за 2003-2022: https://github.com/denisnumb/Gordeev/blob/main/331/currencies_stats.json
 
 Код для подсчета этой статистики: https://github.com/denisnumb/Gordeev/blob/main/331/currencies_stats.py
+
+---
+
+```py
+Дата публикации самой старой вакансии: 2005-09-16 17:26:39.040000
+Дата публикации самой новой вакансии: 2022-07-18 19:35:13.030000 
+```
+
+Код для вычисления: https://github.com/denisnumb/Gordeev/blob/main/331/oldest_and_newest.py
