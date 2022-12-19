@@ -22,7 +22,7 @@
 
 # 3.3.1
 
-Статистика валют за 2003-2022: https://github.com/denisnumb/Gordeev/blob/main/331/currencies_stats.json
+Статистика валют за 2003-2022 (вместо скриншота): https://github.com/denisnumb/Gordeev/blob/main/331/currencies_stats.json
 
 Код для подсчета этой статистики: https://github.com/denisnumb/Gordeev/blob/main/331/currencies_stats.py
 
