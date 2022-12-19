@@ -7,7 +7,7 @@ currencies = ('USD', 'RUR', 'EUR', 'KZT', 'UAH', 'BYR')
 format_month = lambda month: str(month) if month >= 10 else f'0{month}'
 
 def get_value(value: str, nominal: str) -> float:
-    return int(nominal) / float(value.replace(',', '.'))
+    return int(nominal) * float(value.replace(',', '.'))
 
 def get_data( month: int, year: int) -> dict:
     month = format_month(month)
