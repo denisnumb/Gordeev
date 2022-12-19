@@ -34,3 +34,9 @@
 ```
 
 Код для вычисления: https://github.com/denisnumb/Gordeev/blob/main/331/oldest_and_newest.py
+
+---
+
+Множители для конвертации валют в рубли за каждый месяц с 2005 по 2022 год: https://github.com/denisnumb/Gordeev/blob/main/331/currency_by_years.json
+
+Код для вычисления: https://github.com/denisnumb/Gordeev/blob/main/331/currency_by_years.py
