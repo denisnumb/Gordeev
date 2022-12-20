@@ -8,6 +8,9 @@ currencies = {}
 for vacancy in data:
     year = vacancy.published_at.year
     currency = vacancy.salary.salary_currency
+    
+    if not currency:
+        continue
 
     if year not in currencies.keys():
         currencies[year] = {}
