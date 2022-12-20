@@ -17,7 +17,7 @@ def get_data( month: int, year: int) -> dict:
 
 result = {}
 
-for year in range(2005, 2023):
+for year in range(2003, 2023):
     for month in range(1, 13):
         result[f'{year}-{format_month(month)}'] = get_data(month, year)
 
