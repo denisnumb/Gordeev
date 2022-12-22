@@ -50,3 +50,9 @@
 Код: https://github.com/denisnumb/Gordeev/blob/main/332/332.py
 
 Результат: https://github.com/denisnumb/Gordeev/blob/main/332/result.csv
+
+# 3.4.1
+
+Код: https://github.com/denisnumb/Gordeev/blob/main/341/341.py
+
+Результат: https://github.com/denisnumb/Gordeev/blob/main/341/result.csv
